@@ -26,7 +26,7 @@ jobs:
       # Step 2: Install Nix with Flakes enabled
       # This is the magic that makes our reproducible environment available in the cloud
       - name: Install Nix
-        uses: cachix/install-nix-action@v22
+        uses: cachix/install-nix-action@v31 
         with:
           nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
