@@ -47,7 +47,7 @@
             pname = "f1-telemetry-service";
             version = "0.1.0";
             src = ./.;
-            vendorHash = "";
+            vendorHash = "sha256-0Qxw+MUYVgzgWB8vi3HBYtVXSq/btfh4ZfV/m1chNrA=";
           };
 
           entrypoint = pkgs.writeShellScriptBin "entrypoint" ''
