@@ -47,7 +47,7 @@
             pname = "f1-telemetry-service";
             version = "0.1.0";
             src = ./.;
-            vendorSha256 = pkgs.lib.fakeSha256;
+            vendorHash = pkgs.lib.fakeSha256;
           };
 
           entrypoint = pkgs.writeShellScriptBin "entrypoint" ''
