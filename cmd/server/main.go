@@ -7,8 +7,8 @@ import (
 	"os"
 
 	// Use the correct, full import path for your project
-	"github.com/peribot/f1-telemetry-backend/internal/polling"
-	"github.com/peribot/f1-telemetry-backend/internal/websocket"
+	"github.com/peri-Bot/f1-telemetry-backend/internal/polling"
+	"github.com/peri-Bot/f1-telemetry-backend/internal/websocket"
 )
 
 func main() {
