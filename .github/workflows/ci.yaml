@@ -1,0 +1,44 @@
+# .github/workflows/ci.yml
+
+name: Backend CI
+
+# This workflow runs on every push to the 'main' branch
+on:
+  push:
+    branches:
+      - main
+  # It also runs on every pull request targeting the 'main' branch
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # We define a single job called "test-and-build"
+  test-and-build:
+    # It will run on the latest version of Ubuntu provided by GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Install Nix with Flakes enabled
+      # This is the magic that makes our reproducible environment available in the cloud
+      - name: Install Nix
+        uses: cachix/install-nix-action@v22
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # Step 3: Run the tests using the Nix environment
+      # This is the most important step. It's our quality gate.
+      - name: Run Go Tests
+        run: nix develop -c go test ./...
+
+      # Step 4: Build the production container
+      # If the tests pass, we proceed to build the final artifact.
+      # This proves that our application is buildable and ready for the next stage (deployment).
+      - name: Build Production Container
+        run: nix build .
