@@ -1,7 +1,13 @@
-{ pkgs ? import <nixpkgs> {} }:
+# This function now expects the Python package set AND the Nix standard library.
+{ pythonPackages, lib }:
+
 let
-  requirements = pkgs.lib.splitString "\n" (builtins.readFile ./requirements.txt);
-  filteredRequirements = pkgs.lib.filter (p: p != "" && !pkgs.lib.hasPrefix "#" p) requirements;
-  packages = map (p: pkgs.python3Packages.${builtins.toLower p}) filteredRequirements;
+  # Use the more robust lib.splitString instead of builtins.split
+  requirements = lib.splitString "\n" (builtins.readFile ./requirements.txt);
+
+  # Use lib.filter and lib.hasPrefix, which are the correct functions.
+  filteredRequirements = lib.filter (p: p != "" && !lib.hasPrefix "#" p) requirements;
+
+  packages = map (p: pythonPackages.${builtins.toLower p}) filteredRequirements;
 in
 packages
