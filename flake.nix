@@ -1,80 +1,115 @@
 {
-  description = "Nix flake for the F1 Telemetry Go Backend Service (using native Nix functions)";
+  description = "F1 Telemetry Services (Nix-based Artifact Builder)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs }:
-    let
-      supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs { inherit system; };
 
-      forAllSystems = function: nixpkgs.lib.genAttrs supportedSystems (system:
-        let
-          pkgs = import nixpkgs { inherit system; };
-          pythonVersion = pkgs.python311;
+        # --- 1. Python Sidecar Definition ---
 
-          # --- DEFINE IT ONCE HERE ---
-          # This pythonSidecarEnv will be available to both devShells and packages.
-          pythonSidecarEnv = pythonVersion.withPackages (ps: [
-            (pkgs.callPackage ./sidecar/requirements.nix { })
-          ]);
+        livef1 = pkgs.python311Packages.buildPythonPackage rec {
+          pname = "livef1"; # <-- CRITICAL: Match PyPI capitalization exactly
+          version = "1.0.953";
+          src = pkgs.fetchPypi {
+            inherit pname version;
+            # Put a fake hash first to get the real one from the error message
+            sha256 = "sha256-3Me5SadodXEEI7QNy7QWhSplkG/OL2hyvaZ5N0Uz6sw=";
+          };
 
-        in
-        function { inherit pkgs pythonSidecarEnv; } # Pass them into the function
-      );
-
-    in
-    {
-      devShells = forAllSystems ({ pkgs, pythonSidecarEnv }: {
-        # <-- Receive it here
-        default = pkgs.mkShell {
-          packages = [
-            pkgs.go_1_24
-            pkgs.gopls
-            pkgs.air
-            pythonSidecarEnv # <-- Reuse it here
+          # Necessary because this package likely doesn't have a pyproject.toml
+          # compatible with Nix's strict defaults.
+          pyproject = true;
+          build-system = [
+            pkgs.python311Packages.setuptools
+            pkgs.python311Packages.wheel
           ];
-          shellHook = ''
-            echo "Entered F1 Telemetry Backend dev environment."
+
+          postPatch = ''
+            touch requirements.txt
+          '';
+
+          # We also likely need to manually add the dependencies since we just 
+          # bypassed reading them from the file. 'requests' is a safe bet for 
+          # API libraries, but we can add more if the app crashes at runtime.
+          propagatedBuildInputs = [
+            pkgs.python311Packages.requests
+            pkgs.python311Packages.python-dateutil # <-- The fix for your error
+            pkgs.python311Packages.jellyfish
+            pkgs.python311Packages.numpy
+            pkgs.python311Packages.pandas
+            pkgs.python311Packages.setuptools
+            pkgs.python311Packages.ujson
+            pkgs.python311Packages.websockets
+            pkgs.python311Packages.scipy
+
+          ];
+
+          # Skip tests to avoid import errors during build
+          doCheck = false;
+        };
+
+        pythonEnv = pkgs.python311.withPackages (ps: [
+          ps.flask
+          livef1
+        ]);
+
+        # Bundle the Sidecar into a "Runtime" directory
+        sidecarRuntime = pkgs.symlinkJoin {
+          name = "sidecar-runtime";
+          paths = [ pythonEnv ./sidecar ];
+          postBuild = ''
+            mkdir -p $out/bin
+            # Create a startup script that knows exactly where Python is
+            cat > $out/bin/entrypoint <<EOF
+            #!${pkgs.stdenv.shell}
+            exec $out/bin/python $out/data_forwarder.py
+            EOF
+            chmod +x $out/bin/entrypoint
           '';
         };
-      });
 
-      packages = forAllSystems ({ pkgs, pythonSidecarEnv }: # <-- And also receive it here
-        let
-          backend = pkgs.buildGoModule {
-            pname = "f1-telemetry-service";
-            version = "0.1.0";
-            src = ./.;
-            vendorHash = "sha256-0Qxw+MUYVgzgWB8vi3HBYtVXSq/btfh4ZfV/m1chNrA=";
-          };
+        # --- 2. Go Backend Definition ---
 
-          entrypoint = pkgs.writeShellScriptBin "entrypoint" ''
-            #!${pkgs.stdenv.shell}
-            echo "Starting Python sidecar in the background..."
-            ${pythonSidecarEnv}/bin/python ./sidecar/data_forwarder.py &
-            echo "Starting Go backend service..."
-            exec ${backend}/bin/f1-telemetry-service
-          '';
-
-        in
-        {
-          container = pkgs.dockerTools.buildImage {
-            name = "f1-telemetry-service";
-            tag = "latest";
-            copyToRoot = pkgs.buildEnv {
-              name = "image-root";
-              paths = [ backend entrypoint pythonSidecarEnv ./sidecar ];
-            };
-            config = {
-              Cmd = [ "${entrypoint}/bin/entrypoint" ];
-              ExposedPorts = { "8080/tcp" = { }; };
-              Env = [ "PORT=8080" "SIDECAR_API_URL=http://localhost:5000/data" ];
-            };
-          };
-
-          default = self.packages.x86_64-linux.container;
+        goBuilder = (pkgs.buildGoModule {
+          pname = "f1-telemetry-service";
+          version = "0.1.0";
+          src = ./.;
+          # Replace with your real Go vendor hash
+          vendorHash = "sha256-0Qxw+MUYVgzgWB8vi3HBYtVXSq/btfh4ZfV/m1chNrA=";
+        }).overrideAttrs (old: {
+          preBuild = '' export CGO_ENABLED=0 '';
         });
-    };
+
+        # Bundle the Backend into a "Runtime" directory
+        backendRuntime = pkgs.symlinkJoin {
+          name = "backend-runtime";
+          paths = [ goBuilder ];
+          postBuild = ''
+            # We don't strictly need a script for Go, but we'll ensure 
+            # the binary is in a standard location.
+            mkdir -p $out/bin
+          '';
+        };
+
+      in
+      {
+        packages = {
+          backend = backendRuntime;
+          sidecar = sidecarRuntime;
+          # Default to backend if unspecified
+          default = backendRuntime;
+        };
+
+        devShells.default = pkgs.mkShell {
+          packages = [ pkgs.go_1_24 pkgs.gopls pkgs.air pythonEnv ];
+        };
+      }
+    );
 }
+
