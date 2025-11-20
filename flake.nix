@@ -47,7 +47,7 @@
             pkgs.python311Packages.ujson
             pkgs.python311Packages.websockets
             pkgs.python311Packages.scipy
-
+            pkgs.python311Packages.beautifulsoup4
           ];
 
           # Skip tests to avoid import errors during build
