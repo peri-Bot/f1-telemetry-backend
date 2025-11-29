@@ -66,11 +66,11 @@
           postBuild = ''
             mkdir -p $out/bin
             # Create a startup script that knows exactly where Python is
-            cat > $out/bin/entrypoint <<EOF
+            cat > $out/bin/sidecar-runtime <<EOF
             #!${pkgs.stdenv.shell}
             exec $out/bin/python $out/data_forwarder.py
             EOF
-            chmod +x $out/bin/entrypoint
+            chmod +x $out/bin/sidecar-runtime
           '';
         };
 
@@ -107,7 +107,13 @@
         };
 
         devShells.default = pkgs.mkShell {
-          packages = [ pkgs.go_1_24 pkgs.gopls pkgs.air pythonEnv ];
+          packages = [
+            pkgs.go_1_24
+            pkgs.gopls
+            pkgs.air
+            pkgs.golangci-lint
+            pythonEnv
+          ];
         };
       }
     );
