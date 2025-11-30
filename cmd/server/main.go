@@ -2,9 +2,13 @@
 package main
 
 import (
-	"log"
+	"context"
+	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	// Use the correct, full import path for your project
 	"github.com/peri-Bot/f1-telemetry-backend/internal/polling"
@@ -12,6 +16,10 @@ import (
 )
 
 func main() {
+	// Initialize structured logger
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	hub := websocket.NewHub()
 	go hub.Run()
 
@@ -24,21 +32,49 @@ func main() {
 	poller := polling.NewPoller(sidecarURL, hub.Broadcast)
 	go poller.StartPolling()
 
-	// The root endpoint is just for health checks
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Backend server is running"))
-	})
+	// Serve static files from frontend directory
+	fs := http.FileServer(http.Dir("./frontend"))
+	http.Handle("/", fs)
 
 	// The /ws endpoint is handled by our hub
 	http.HandleFunc("/ws", hub.HandleWebSocket)
+
+	// Health check endpoint for Kubernetes
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+	})
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	log.Printf("Starting server on :%s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	server := &http.Server{
+		Addr: ":" + port,
 	}
+
+	// Start server in a goroutine
+	go func() {
+		logger.Info("Starting server", "port", port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Error("Failed to start server", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logger.Info("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Error("Server forced to shutdown", "error", err)
+	}
+
+	logger.Info("Server exiting")
 }
