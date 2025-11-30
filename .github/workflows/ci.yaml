@@ -34,11 +34,10 @@ jobs:
         with:
           version: latest
 
-      - name: Install govulncheck
-        run: nix develop -c go install golang.org/x/vuln/cmd/govulncheck@latest
-
       - name: Run Security Scan
-        run: nix develop -c govulncheck ./...
+        uses: golang/govulncheck-action@v1
+        with:
+          version: latest
 
   build-backend-docker:
     name: Build Backend Docker Image
