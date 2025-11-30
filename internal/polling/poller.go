@@ -1,4 +1,3 @@
-// internal/polling/poller.go
 package polling
 
 import (
@@ -39,12 +38,12 @@ func (p *poller) StartPolling() {
 			log.Printf("Error polling sidecar: %v", err)
 			continue // Don't stop, just try again on the next tick
 		}
-		defer resp.Body.Close()
-
 		// For now, we'll just pass the raw bytes.
 		// A real implementation would parse into our TelemetryData model.
 		var data map[string]interface{}
-		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		err = json.NewDecoder(resp.Body).Decode(&data)
+		_ = resp.Body.Close() // Close immediately after use
+		if err != nil {
 			log.Printf("Error decoding sidecar response: %v", err)
 			continue
 		}

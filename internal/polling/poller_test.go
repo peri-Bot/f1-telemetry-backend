@@ -1,11 +1,10 @@
-// internal/polling/poller_test.go
 package polling
 
 import (
-	"encoding/json" // <-- Import the json package
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"reflect" // <-- Import the reflect package
+	"reflect"
 	"testing"
 	"time"
 )
@@ -15,7 +14,7 @@ func TestPoller(t *testing.T) {
 	const fakeJSON = `{"speed":321,"gear":8}`
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(fakeJSON))
+		_, _ = w.Write([]byte(fakeJSON))
 	}))
 	defer server.Close()
 

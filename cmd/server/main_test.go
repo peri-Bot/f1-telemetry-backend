@@ -19,7 +19,7 @@ func TestHealthCheckHandler(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Backend server is running"))
+		_, _ = w.Write([]byte("Backend server is running"))
 	})
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
