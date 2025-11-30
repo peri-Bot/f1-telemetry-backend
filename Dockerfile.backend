@@ -1,0 +1,35 @@
+# --- Stage 1: Nix Builder ---
+FROM nixos/nix:latest AS builder
+
+# Set up workspace
+COPY . /tmp/build
+WORKDIR /tmp/build
+
+# Build the 'backend' package from the flake
+RUN nix \
+    --extra-experimental-features "nix-command flakes" \
+    build .#backend
+
+# Calculate the runtime closure (the minimal set of files needed to run)
+RUN mkdir /tmp/nix-store-closure && \
+    cp -R $(nix-store -qR result/) /tmp/nix-store-closure
+
+# --- Stage 2: Final Image ---
+FROM scratch
+
+# Copy the Nix store dependencies (glibc, etc., if dynamic; or just empty if static)
+COPY --from=builder /tmp/nix-store-closure /nix/store
+
+# Copy the application artifacts
+COPY --from=builder /tmp/build/result /app
+
+# Copy the frontend directory
+COPY --from=builder /tmp/build/frontend /app/frontend
+
+# Expose the port
+EXPOSE 8080
+
+# Run the binary. 
+# Note: In your flake, you created the backendRuntime via symlinkJoin.
+# Typically this puts binaries in /bin. So inside /app (which is the result), it is /app/bin/...
+CMD ["/app/bin/server"]

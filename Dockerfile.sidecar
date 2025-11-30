@@ -1,0 +1,31 @@
+# --- Stage 1: Nix Builder ---
+FROM nixos/nix:latest AS builder
+
+# Set up workspace
+COPY . /tmp/build
+WORKDIR /tmp/build
+
+# Build the 'sidecar' package from the flake
+RUN nix \
+    --extra-experimental-features "nix-command flakes" \
+    build .#sidecar
+
+# Calculate the runtime closure (Python interpreter, pandas, numpy, etc.)
+RUN mkdir /tmp/nix-store-closure && \
+    cp -R $(nix-store -qR result/) /tmp/nix-store-closure
+
+# --- Stage 2: Final Image ---
+# We use scratch because Nix bundles the Python interpreter and all libs explicitly.
+FROM scratch
+
+# Copy the Nix store dependencies
+COPY --from=builder /tmp/nix-store-closure /nix/store
+
+# Copy the application artifacts
+COPY --from=builder /tmp/build/result /app
+
+# Expose the Flask port
+EXPOSE 5000
+
+# Run the sidecar Python script
+CMD ["/app/bin/python", "/app/data_forwarder.py"]
