@@ -23,9 +23,6 @@ COPY --from=builder /tmp/nix-store-closure /nix/store
 # Copy the application artifacts
 COPY --from=builder /tmp/build/result /app
 
-# Copy the frontend directory
-COPY --from=builder /tmp/build/frontend /app/frontend
-
 # Expose the port
 EXPOSE 8080
 
