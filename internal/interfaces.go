@@ -8,6 +8,7 @@ import "net/http"
 type Hub interface {
 	Run()
 	HandleWebSocket(w http.ResponseWriter, r *http.Request)
+	Broadcast(message []byte)
 }
 
 // DataPoller is the contract for the service that fetches data from the sidecar.
