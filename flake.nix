@@ -55,7 +55,9 @@
         };
 
         pythonEnv = pkgs.python311.withPackages (ps: [
-          ps.flask
+          ps.grpcio
+          ps.grpcio-tools
+          ps.grpcio-health-checking
           livef1
         ]);
 
@@ -64,13 +66,14 @@
           name = "sidecar-runtime";
           paths = [ pythonEnv ./sidecar ];
           postBuild = ''
-            mkdir -p $out/bin
-            # Create a startup script that knows exactly where Python is
-            cat > $out/bin/sidecar-runtime <<EOF
-            #!${pkgs.stdenv.shell}
-            exec $out/bin/python $out/data_forwarder.py
-            EOF
-            chmod +x $out/bin/sidecar-runtime
+                        mkdir -p $out/bin
+                        # Create a startup script that knows exactly where Python is
+                        cat > $out/bin/sidecar-runtime 
+            	    <<EOF
+                        #!${pkgs.stdenv.shell}
+                        exec $out/bin/python $out/data_forwarder.py
+                        EOF
+                        chmod +x $out/bin/sidecar-runtime
           '';
         };
 
@@ -80,10 +83,27 @@
           pname = "f1-telemetry-service";
           version = "0.1.0";
           src = ./.;
+
+          #  Tools needed for proto stubs generatetion 
+          nativeBuildInputs = [
+            pkgs.protobuf
+            pkgs.protoc-gen-go
+            pkgs.protoc-gen-go-grpc
+          ];
+          modPostbuild = ''
+                            echo "Generating protobuf stubs..."
+                            mkdir -p proto/gen/telemetrypb
+                            protoc -I proto \
+                              --go_out=proto/gen/telemetrypb --go_opt=paths=source_relative \
+                              --go-grpc_out=proto/gen/telemetrypb --go-grpc_opt=paths=source_relative \
+                              proto/telemetry.proto
+            		  '';
+
           # Replace with your real Go vendor hash
           vendorHash = "sha256-0Qxw+MUYVgzgWB8vi3HBYtVXSq/btfh4ZfV/m1chNrA=";
         }).overrideAttrs (old: {
-          preBuild = '' export CGO_ENABLED=0 '';
+          preBuild = '' export
+            CGO_ENABLED=0 '';
         });
 
         # Bundle the Backend into a "Runtime" directory
@@ -112,10 +132,14 @@
             pkgs.gopls
             pkgs.air
             pkgs.golangci-lint
+            pkgs.protobuf
+            pkgs.protoc-gen-go
+            pkgs.protoc-gen-go-grpc
             pythonEnv
           ];
         };
       }
     );
 }
+
 

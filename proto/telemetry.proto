@@ -1,0 +1,37 @@
+syntax = "proto3";
+package telemetry;
+option go_package = "github.com/peri-Bot/f1-telemetry-backend/proto/gen/telemetrypb";
+
+message CarData {
+  int32  speed    = 1;
+  int32  rpm      = 2;
+  int32  gear     = 3;
+  double throttle = 4;
+  double brake    = 5;
+  bool   drs      = 6;
+}
+
+message Position {
+  double x      = 1;
+  double y      = 2;
+  double z      = 3;
+  string status = 4; // "OnTrack", "OffTrack", etc.
+}
+
+message DriverUpdate {
+  string   driver_number = 1;
+  CarData  car_data      = 2;
+  Position position      = 3;
+}
+
+message TelemetryBatch {
+  repeated DriverUpdate drivers   = 1;
+  string                timestamp = 2;
+}
+
+message StreamRequest {}
+
+service TelemetryService {
+  // Server-streaming: sidecar pushes batches of driver telemetry
+  rpc StreamTelemetry(StreamRequest) returns (stream TelemetryBatch);
+}

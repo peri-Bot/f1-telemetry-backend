@@ -17,7 +17,7 @@ const (
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	hub  *hub
+	hub  *Hub
 	conn *websocket.Conn
 	send chan []byte // Buffered channel of outbound messages.
 }
