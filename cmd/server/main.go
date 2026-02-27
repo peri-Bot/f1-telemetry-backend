@@ -10,8 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	// Use the correct, full import path for your project
-	"github.com/peri-Bot/f1-telemetry-backend/internal/polling"
+	"github.com/peri-Bot/f1-telemetry-backend/internal/grpcclient"
 	"github.com/peri-Bot/f1-telemetry-backend/internal/websocket"
 )
 
@@ -23,14 +22,23 @@ func main() {
 	hub := websocket.NewHub()
 	go hub.Run()
 
-	sidecarURL := os.Getenv("SIDECAR_API_URL")
-	if sidecarURL == "" {
-		sidecarURL = "http://localhost:5000/data"
+	// gRPC sidecar address
+	sidecarAddr := os.Getenv("SIDECAR_GRPC_ADDR")
+	if sidecarAddr == "" {
+		sidecarAddr = "localhost:50051"
 	}
 
-	// The poller's handler is the hub's Broadcast method. This wires them together.
-	poller := polling.NewPoller(sidecarURL, hub.Broadcast)
-	go poller.StartPolling()
+	// Create a context that is cancelled on shutdown signal
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Wire the gRPC client: stream → hub.Broadcast
+	grpcClient := grpcclient.New(sidecarAddr, hub.Broadcast)
+	go func() {
+		if err := grpcClient.Start(ctx); err != nil && ctx.Err() == nil {
+			logger.Error("gRPC client error", "error", err)
+		}
+	}()
 
 	// Serve static files from frontend directory
 	fs := http.FileServer(http.Dir("./frontend"))
@@ -40,10 +48,7 @@ func main() {
 	http.HandleFunc("/ws", hub.HandleWebSocket)
 
 	// Health check endpoint for Kubernetes
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("OK"))
-	})
+	http.HandleFunc("/health", healthHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -56,7 +61,7 @@ func main() {
 
 	// Start server in a goroutine
 	go func() {
-		logger.Info("Starting server", "port", port)
+		logger.Info("Starting server", "port", port, "sidecar_grpc_addr", sidecarAddr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("Failed to start server", "error", err)
 			os.Exit(1)
@@ -69,12 +74,20 @@ func main() {
 	<-quit
 	logger.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	// Cancel gRPC stream context
+	cancel()
 
-	if err := server.Shutdown(ctx); err != nil {
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		logger.Error("Server forced to shutdown", "error", err)
 	}
 
 	logger.Info("Server exiting")
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("OK"))
 }
