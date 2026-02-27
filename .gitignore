@@ -33,5 +33,4 @@ go.work.sum
 # .idea/
 # .vscode/
 
-proto/gen/
-sidecar/proto/telemetry_pb2*
+result

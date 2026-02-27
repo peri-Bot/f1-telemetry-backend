@@ -79,32 +79,31 @@
 
         # --- 2. Go Backend Definition ---
 
-        goBuilder = (pkgs.buildGoModule {
+        goBuilder = pkgs.buildGoModule {
           pname = "f1-telemetry-service";
           version = "0.1.0";
           src = ./.;
 
-          #  Tools needed for proto stubs generatetion 
           nativeBuildInputs = [
             pkgs.protobuf
             pkgs.protoc-gen-go
             pkgs.protoc-gen-go-grpc
           ];
-          modPostbuild = ''
-                            echo "Generating protobuf stubs..."
-                            mkdir -p proto/gen/telemetrypb
-                            protoc -I proto \
-                              --go_out=proto/gen/telemetrypb --go_opt=paths=source_relative \
-                              --go-grpc_out=proto/gen/telemetrypb --go-grpc_opt=paths=source_relative \
-                              proto/telemetry.proto
-            		  '';
 
-          # Replace with your real Go vendor hash
-          vendorHash = "sha256-0Qxw+MUYVgzgWB8vi3HBYtVXSq/btfh4ZfV/m1chNrA=";
-        }).overrideAttrs (old: {
-          preBuild = '' export
-            CGO_ENABLED=0 '';
-        });
+          # Generate stubs right before `go build` runs
+          preBuild = ''
+            echo "Generating Go protobuf stubs..."
+            mkdir -p proto/gen/telemetrypb
+            protoc -I proto \
+              --go_out=proto/gen/telemetrypb --go_opt=paths=source_relative \
+              --go-grpc_out=proto/gen/telemetrypb --go-grpc_opt=paths=source_relative \
+              proto/telemetry.proto
+              
+            export CGO_ENABLED=0
+          '';
+
+          vendorHash = "sha256-EvC5AtO90A3HI3oPsoKmsspwsnytS00GPJ8LDxXz3h0=";
+        };
 
         # Bundle the Backend into a "Runtime" directory
         backendRuntime = pkgs.symlinkJoin {
