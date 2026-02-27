@@ -1,0 +1,26 @@
+services:
+  sidecar:
+    build:
+      context: .
+      dockerfile: Dockerfile.sidecar
+    ports:
+      - "50051:50051"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SIDECAR_GRPC_ADDR=sidecar:50051
+      - PORT=8080
+      - ALLOWED_ORIGINS=*
+    depends_on:
+      - sidecar
+    healthcheck:
+      test: ["CMD-SHELL", "true"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

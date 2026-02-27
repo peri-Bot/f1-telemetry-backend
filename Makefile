@@ -1,6 +1,6 @@
 # Makefile for F1 Telemetry Backend
 
-.PHONY: all build run test lint clean docker-build docker-build-all docker-push k8s-deploy k8s-delete k8s-logs
+.PHONY: all build run test lint clean proto docker-build docker-build-all docker-push k8s-deploy k8s-delete k8s-logs
 
 # Variables
 BINARY_NAME=f1-telemetry-service
@@ -8,10 +8,26 @@ DOCKER_IMAGE_BACKEND=f1-telemetry-backend
 DOCKER_IMAGE_SIDECAR=f1-telemetry-sidecar
 K8S_NAMESPACE=f1-telemetry
 
-all: build
+all: proto build
+
+## Generate protobuf stubs (Go + Python)
+proto:
+	@echo "Generating protobuf stubs..."
+	@mkdir -p proto/gen/telemetrypb
+	@mkdir -p sidecar/proto
+	protoc -I proto \
+		--go_out=proto/gen/telemetrypb --go_opt=paths=source_relative \
+		--go-grpc_out=proto/gen/telemetrypb --go-grpc_opt=paths=source_relative \
+		proto/telemetry.proto
+	python -m grpc_tools.protoc -I proto \
+		--python_out=sidecar/proto \
+		--grpc_python_out=sidecar/proto \
+		proto/telemetry.proto
+	@touch sidecar/proto/__init__.py
+	@echo "Proto stubs generated."
 
 ## Build the binary
-build:
+build: proto
 	@echo "Building..."
 	go build -o bin/$(BINARY_NAME) ./cmd/server
 

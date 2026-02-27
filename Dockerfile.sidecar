@@ -10,7 +10,7 @@ RUN nix \
     --extra-experimental-features "nix-command flakes" \
     build .#sidecar
 
-# Calculate the runtime closure (Python interpreter, pandas, numpy, etc.)
+# Calculate the runtime closure (Python interpreter, grpcio, etc.)
 RUN mkdir /tmp/nix-store-closure && \
     cp -R $(nix-store -qR result/) /tmp/nix-store-closure
 
@@ -24,8 +24,8 @@ COPY --from=builder /tmp/nix-store-closure /nix/store
 # Copy the application artifacts
 COPY --from=builder /tmp/build/result /app
 
-# Expose the Flask port
-EXPOSE 5000
+# Expose the gRPC port
+EXPOSE 50051
 
 # Run the sidecar Python script
 CMD ["/app/bin/python", "/app/data_forwarder.py"]

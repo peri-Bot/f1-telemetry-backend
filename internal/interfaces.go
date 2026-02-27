@@ -1,7 +1,10 @@
 // internal/interfaces.go
 package internal
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+)
 
 // Hub is the contract for our WebSocket hub.
 // It manages all client connections and broadcasts data.
@@ -11,7 +14,8 @@ type Hub interface {
 	Broadcast(message []byte)
 }
 
-// DataPoller is the contract for the service that fetches data from the sidecar.
-type DataPoller interface {
-	StartPolling()
+// DataSource is the contract for the service that provides telemetry data.
+// Implementations include gRPC stream consumers (or HTTP pollers for fallback).
+type DataSource interface {
+	Start(ctx context.Context) error
 }
