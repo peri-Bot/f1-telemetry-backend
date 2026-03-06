@@ -65,15 +65,31 @@
         sidecarRuntime = pkgs.symlinkJoin {
           name = "sidecar-runtime";
           paths = [ pythonEnv ./sidecar ];
+          nativeBuildInputs = [ pkgs.protobuf ];
           postBuild = ''
-                        mkdir -p $out/bin
-                        # Create a startup script that knows exactly where Python is
-                        cat > $out/bin/sidecar-runtime 
-            	    <<EOF
-                        #!${pkgs.stdenv.shell}
-                        exec $out/bin/python $out/data_forwarder.py
-                        EOF
-                        chmod +x $out/bin/sidecar-runtime
+            mkdir -p $out/bin
+
+            # Remove the symlinked proto dir (prevents read-only errors if it exists locally)
+            rm -rf $out/proto
+            
+            # Generate Python proto stubs
+            mkdir -p $out/proto
+            ${pythonEnv}/bin/python -m grpc_tools.protoc \
+              -I ${./proto} \
+              --python_out=$out/proto \
+              --grpc_python_out=$out/proto \
+              ${./proto}/telemetry.proto
+
+            # Fix absolute → relative import
+            sed -i 's/^import telemetry_pb2 as/from . import telemetry_pb2 as/' $out/proto/telemetry_pb2_grpc.py
+            touch $out/proto/__init__.py
+
+            # Create a startup script that knows exactly where Python is
+            cat > $out/bin/sidecar-runtime <<EOF
+            #!${pkgs.stdenv.shell}
+            exec $out/bin/python $out/data_forwarder.py
+            EOF
+            chmod +x $out/bin/sidecar-runtime
           '';
         };
 
