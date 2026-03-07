@@ -23,6 +23,8 @@ proto:
 		--python_out=sidecar/proto \
 		--grpc_python_out=sidecar/proto \
 		proto/telemetry.proto
+	@# Fix absolute import → relative import so `from proto import` works
+	@sed -i 's/^import telemetry_pb2 as/from . import telemetry_pb2 as/' sidecar/proto/telemetry_pb2_grpc.py
 	@touch sidecar/proto/__init__.py
 	@echo "Proto stubs generated."
 
