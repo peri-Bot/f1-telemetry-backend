@@ -321,6 +321,118 @@ func (*StreamRequest) Descriptor() ([]byte, []int) {
 	return file_telemetry_proto_rawDescGZIP(), []int{4}
 }
 
+type SessionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Year          int32                  `protobuf:"varint,1,opt,name=year,proto3" json:"year,omitempty"`
+	Meeting       string                 `protobuf:"bytes,2,opt,name=meeting,proto3" json:"meeting,omitempty"`
+	Session       string                 `protobuf:"bytes,3,opt,name=session,proto3" json:"session,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SessionRequest) Reset() {
+	*x = SessionRequest{}
+	mi := &file_telemetry_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SessionRequest) ProtoMessage() {}
+
+func (x *SessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_telemetry_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SessionRequest.ProtoReflect.Descriptor instead.
+func (*SessionRequest) Descriptor() ([]byte, []int) {
+	return file_telemetry_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SessionRequest) GetYear() int32 {
+	if x != nil {
+		return x.Year
+	}
+	return 0
+}
+
+func (x *SessionRequest) GetMeeting() string {
+	if x != nil {
+		return x.Meeting
+	}
+	return ""
+}
+
+func (x *SessionRequest) GetSession() string {
+	if x != nil {
+		return x.Session
+	}
+	return ""
+}
+
+type SessionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SessionResponse) Reset() {
+	*x = SessionResponse{}
+	mi := &file_telemetry_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SessionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SessionResponse) ProtoMessage() {}
+
+func (x *SessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_telemetry_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SessionResponse.ProtoReflect.Descriptor instead.
+func (*SessionResponse) Descriptor() ([]byte, []int) {
+	return file_telemetry_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *SessionResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SessionResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_telemetry_proto protoreflect.FileDescriptor
 
 const file_telemetry_proto_rawDesc = "" +
@@ -345,9 +457,18 @@ const file_telemetry_proto_rawDesc = "" +
 	"\x0eTelemetryBatch\x121\n" +
 	"\adrivers\x18\x01 \x03(\v2\x17.telemetry.DriverUpdateR\adrivers\x12\x1c\n" +
 	"\ttimestamp\x18\x02 \x01(\tR\ttimestamp\"\x0f\n" +
-	"\rStreamRequest2\\\n" +
+	"\rStreamRequest\"X\n" +
+	"\x0eSessionRequest\x12\x12\n" +
+	"\x04year\x18\x01 \x01(\x05R\x04year\x12\x18\n" +
+	"\ameeting\x18\x02 \x01(\tR\ameeting\x12\x18\n" +
+	"\asession\x18\x03 \x01(\tR\asession\"E\n" +
+	"\x0fSessionResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xa1\x01\n" +
 	"\x10TelemetryService\x12H\n" +
-	"\x0fStreamTelemetry\x12\x18.telemetry.StreamRequest\x1a\x19.telemetry.TelemetryBatch0\x01B@Z>github.com/peri-Bot/f1-telemetry-backend/proto/gen/telemetrypbb\x06proto3"
+	"\x0fStreamTelemetry\x12\x18.telemetry.StreamRequest\x1a\x19.telemetry.TelemetryBatch0\x01\x12C\n" +
+	"\n" +
+	"SetSession\x12\x19.telemetry.SessionRequest\x1a\x1a.telemetry.SessionResponseB@Z>github.com/peri-Bot/f1-telemetry-backend/proto/gen/telemetrypbb\x06proto3"
 
 var (
 	file_telemetry_proto_rawDescOnce sync.Once
@@ -361,22 +482,26 @@ func file_telemetry_proto_rawDescGZIP() []byte {
 	return file_telemetry_proto_rawDescData
 }
 
-var file_telemetry_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_telemetry_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_telemetry_proto_goTypes = []any{
-	(*CarData)(nil),        // 0: telemetry.CarData
-	(*Position)(nil),       // 1: telemetry.Position
-	(*DriverUpdate)(nil),   // 2: telemetry.DriverUpdate
-	(*TelemetryBatch)(nil), // 3: telemetry.TelemetryBatch
-	(*StreamRequest)(nil),  // 4: telemetry.StreamRequest
+	(*CarData)(nil),         // 0: telemetry.CarData
+	(*Position)(nil),        // 1: telemetry.Position
+	(*DriverUpdate)(nil),    // 2: telemetry.DriverUpdate
+	(*TelemetryBatch)(nil),  // 3: telemetry.TelemetryBatch
+	(*StreamRequest)(nil),   // 4: telemetry.StreamRequest
+	(*SessionRequest)(nil),  // 5: telemetry.SessionRequest
+	(*SessionResponse)(nil), // 6: telemetry.SessionResponse
 }
 var file_telemetry_proto_depIdxs = []int32{
 	0, // 0: telemetry.DriverUpdate.car_data:type_name -> telemetry.CarData
 	1, // 1: telemetry.DriverUpdate.position:type_name -> telemetry.Position
 	2, // 2: telemetry.TelemetryBatch.drivers:type_name -> telemetry.DriverUpdate
 	4, // 3: telemetry.TelemetryService.StreamTelemetry:input_type -> telemetry.StreamRequest
-	3, // 4: telemetry.TelemetryService.StreamTelemetry:output_type -> telemetry.TelemetryBatch
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
+	5, // 4: telemetry.TelemetryService.SetSession:input_type -> telemetry.SessionRequest
+	3, // 5: telemetry.TelemetryService.StreamTelemetry:output_type -> telemetry.TelemetryBatch
+	6, // 6: telemetry.TelemetryService.SetSession:output_type -> telemetry.SessionResponse
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -393,7 +518,7 @@ func file_telemetry_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_telemetry_proto_rawDesc), len(file_telemetry_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

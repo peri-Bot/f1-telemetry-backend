@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0ftelemetry.proto\x12\ttelemetry\"a\n\x07\x43\x61rData\x12\r\n\x05speed\x18\x01 \x01(\x05\x12\x0b\n\x03rpm\x18\x02 \x01(\x05\x12\x0c\n\x04gear\x18\x03 \x01(\x05\x12\x10\n\x08throttle\x18\x04 \x01(\x01\x12\r\n\x05\x62rake\x18\x05 \x01(\x01\x12\x0b\n\x03\x64rs\x18\x06 \x01(\x08\";\n\x08Position\x12\t\n\x01x\x18\x01 \x01(\x01\x12\t\n\x01y\x18\x02 \x01(\x01\x12\t\n\x01z\x18\x03 \x01(\x01\x12\x0e\n\x06status\x18\x04 \x01(\t\"r\n\x0c\x44riverUpdate\x12\x15\n\rdriver_number\x18\x01 \x01(\t\x12$\n\x08\x63\x61r_data\x18\x02 \x01(\x0b\x32\x12.telemetry.CarData\x12%\n\x08position\x18\x03 \x01(\x0b\x32\x13.telemetry.Position\"M\n\x0eTelemetryBatch\x12(\n\x07\x64rivers\x18\x01 \x03(\x0b\x32\x17.telemetry.DriverUpdate\x12\x11\n\ttimestamp\x18\x02 \x01(\t\"\x0f\n\rStreamRequest2\\\n\x10TelemetryService\x12H\n\x0fStreamTelemetry\x12\x18.telemetry.StreamRequest\x1a\x19.telemetry.TelemetryBatch0\x01\x42@Z>github.com/peri-Bot/f1-telemetry-backend/proto/gen/telemetrypbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0ftelemetry.proto\x12\ttelemetry\"a\n\x07\x43\x61rData\x12\r\n\x05speed\x18\x01 \x01(\x05\x12\x0b\n\x03rpm\x18\x02 \x01(\x05\x12\x0c\n\x04gear\x18\x03 \x01(\x05\x12\x10\n\x08throttle\x18\x04 \x01(\x01\x12\r\n\x05\x62rake\x18\x05 \x01(\x01\x12\x0b\n\x03\x64rs\x18\x06 \x01(\x08\";\n\x08Position\x12\t\n\x01x\x18\x01 \x01(\x01\x12\t\n\x01y\x18\x02 \x01(\x01\x12\t\n\x01z\x18\x03 \x01(\x01\x12\x0e\n\x06status\x18\x04 \x01(\t\"r\n\x0c\x44riverUpdate\x12\x15\n\rdriver_number\x18\x01 \x01(\t\x12$\n\x08\x63\x61r_data\x18\x02 \x01(\x0b\x32\x12.telemetry.CarData\x12%\n\x08position\x18\x03 \x01(\x0b\x32\x13.telemetry.Position\"M\n\x0eTelemetryBatch\x12(\n\x07\x64rivers\x18\x01 \x03(\x0b\x32\x17.telemetry.DriverUpdate\x12\x11\n\ttimestamp\x18\x02 \x01(\t\"\x0f\n\rStreamRequest\"@\n\x0eSessionRequest\x12\x0c\n\x04year\x18\x01 \x01(\x05\x12\x0f\n\x07meeting\x18\x02 \x01(\t\x12\x0f\n\x07session\x18\x03 \x01(\t\"3\n\x0fSessionResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2\xa1\x01\n\x10TelemetryService\x12H\n\x0fStreamTelemetry\x12\x18.telemetry.StreamRequest\x1a\x19.telemetry.TelemetryBatch0\x01\x12\x43\n\nSetSession\x12\x19.telemetry.SessionRequest\x1a\x1a.telemetry.SessionResponseB@Z>github.com/peri-Bot/f1-telemetry-backend/proto/gen/telemetrypbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -42,6 +42,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_TELEMETRYBATCH']._serialized_end=383
   _globals['_STREAMREQUEST']._serialized_start=385
   _globals['_STREAMREQUEST']._serialized_end=400
-  _globals['_TELEMETRYSERVICE']._serialized_start=402
-  _globals['_TELEMETRYSERVICE']._serialized_end=494
+  _globals['_SESSIONREQUEST']._serialized_start=402
+  _globals['_SESSIONREQUEST']._serialized_end=466
+  _globals['_SESSIONRESPONSE']._serialized_start=468
+  _globals['_SESSIONRESPONSE']._serialized_end=519
+  _globals['_TELEMETRYSERVICE']._serialized_start=522
+  _globals['_TELEMETRYSERVICE']._serialized_end=683
 # @@protoc_insertion_point(module_scope)
