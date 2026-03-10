@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	TelemetryService_StreamTelemetry_FullMethodName = "/telemetry.TelemetryService/StreamTelemetry"
+	TelemetryService_SetSession_FullMethodName      = "/telemetry.TelemetryService/SetSession"
 )
 
 // TelemetryServiceClient is the client API for TelemetryService service.
@@ -28,6 +29,8 @@ const (
 type TelemetryServiceClient interface {
 	// Server-streaming: sidecar pushes batches of driver telemetry
 	StreamTelemetry(ctx context.Context, in *StreamRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[TelemetryBatch], error)
+	// Unary: frontend requests to change the simulated historic session
+	SetSession(ctx context.Context, in *SessionRequest, opts ...grpc.CallOption) (*SessionResponse, error)
 }
 
 type telemetryServiceClient struct {
@@ -57,12 +60,24 @@ func (c *telemetryServiceClient) StreamTelemetry(ctx context.Context, in *Stream
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type TelemetryService_StreamTelemetryClient = grpc.ServerStreamingClient[TelemetryBatch]
 
+func (c *telemetryServiceClient) SetSession(ctx context.Context, in *SessionRequest, opts ...grpc.CallOption) (*SessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SessionResponse)
+	err := c.cc.Invoke(ctx, TelemetryService_SetSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TelemetryServiceServer is the server API for TelemetryService service.
 // All implementations must embed UnimplementedTelemetryServiceServer
 // for forward compatibility.
 type TelemetryServiceServer interface {
 	// Server-streaming: sidecar pushes batches of driver telemetry
 	StreamTelemetry(*StreamRequest, grpc.ServerStreamingServer[TelemetryBatch]) error
+	// Unary: frontend requests to change the simulated historic session
+	SetSession(context.Context, *SessionRequest) (*SessionResponse, error)
 	mustEmbedUnimplementedTelemetryServiceServer()
 }
 
@@ -75,6 +90,9 @@ type UnimplementedTelemetryServiceServer struct{}
 
 func (UnimplementedTelemetryServiceServer) StreamTelemetry(*StreamRequest, grpc.ServerStreamingServer[TelemetryBatch]) error {
 	return status.Errorf(codes.Unimplemented, "method StreamTelemetry not implemented")
+}
+func (UnimplementedTelemetryServiceServer) SetSession(context.Context, *SessionRequest) (*SessionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetSession not implemented")
 }
 func (UnimplementedTelemetryServiceServer) mustEmbedUnimplementedTelemetryServiceServer() {}
 func (UnimplementedTelemetryServiceServer) testEmbeddedByValue()                          {}
@@ -108,13 +126,36 @@ func _TelemetryService_StreamTelemetry_Handler(srv interface{}, stream grpc.Serv
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type TelemetryService_StreamTelemetryServer = grpc.ServerStreamingServer[TelemetryBatch]
 
+func _TelemetryService_SetSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TelemetryServiceServer).SetSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TelemetryService_SetSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TelemetryServiceServer).SetSession(ctx, req.(*SessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TelemetryService_ServiceDesc is the grpc.ServiceDesc for TelemetryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var TelemetryService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "telemetry.TelemetryService",
 	HandlerType: (*TelemetryServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SetSession",
+			Handler:    _TelemetryService_SetSession_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "StreamTelemetry",
