@@ -84,12 +84,20 @@ func (c *Client) stream(ctx context.Context) error {
 	}
 
 	c.logger.Info("Connected — receiving telemetry stream")
+	var packetCount uint64
 
 	// Reset backoff on successful connection
 	for {
 		batch, err := stream.Recv()
 		if err != nil {
 			return err
+		}
+
+		packetCount++
+		if packetCount%100 == 0 {
+			c.logger.Info("Telemetry stream heartbeat",
+				"packets_received", packetCount,
+				"drivers_in_last_batch", len(batch.GetDrivers()))
 		}
 
 		data := batchToJSON(batch)
@@ -133,4 +141,24 @@ func batchToJSON(batch *telemetrypb.TelemetryBatch) []byte {
 		return nil
 	}
 	return bytes
+}
+
+// SetSession sends a unary RPC to the sidecar to manually change the historic replay session
+func (c *Client) SetSession(ctx context.Context, year int32, meeting string, session string) (*telemetrypb.SessionResponse, error) {
+	conn, err := grpc.NewClient(
+		c.addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	client := telemetrypb.NewTelemetryServiceClient(conn)
+	req := &telemetrypb.SessionRequest{
+		Year:    year,
+		Meeting: meeting,
+		Session: session,
+	}
+	return client.SetSession(ctx, req)
 }

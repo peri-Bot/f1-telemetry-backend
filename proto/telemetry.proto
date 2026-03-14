@@ -31,7 +31,21 @@ message TelemetryBatch {
 
 message StreamRequest {}
 
+message SessionRequest {
+  int32  year = 1;
+  string meeting = 2;
+  string session = 3;
+}
+
+message SessionResponse {
+  bool   success = 1;
+  string message = 2;
+}
+
 service TelemetryService {
   // Server-streaming: sidecar pushes batches of driver telemetry
   rpc StreamTelemetry(StreamRequest) returns (stream TelemetryBatch);
+
+  // Unary: frontend requests to change the simulated historic session
+  rpc SetSession(SessionRequest) returns (SessionResponse);
 }
